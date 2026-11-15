@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Tiro</title>
+<style>
+  :root{--bg:#1b1b1d;--bar:#2a2a2d;--card:#252528;--line:#3a3a3f;--text:#fff;--muted:#8e8e93;--accent:#2a9dff;--err:#ff6b6b}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+  body{min-height:100dvh;padding:max(14px,env(safe-area-inset-top)) 18px 120px}
+  main{max-width:560px;margin:0 auto}
+  .search{display:flex;align-items:center;gap:12px;background:var(--bar);border-radius:16px;padding:0 8px 0 16px;height:54px}
+  .search svg{width:24px;height:24px;color:var(--muted);flex:none}
+  .search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font-size:18px}
+  .search input::placeholder{color:var(--muted)}
+  .search button{background:var(--accent);border:0;color:#fff;border-radius:12px;height:38px;padding:0 14px;font-weight:600;font-size:15px}
+  h2{font-size:32px;font-weight:700;margin:34px 0 20px;letter-spacing:-.5px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 10px}
+  .fav{background:none;border:0;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:9px;font-size:15px;padding:0}
+  .tile{width:68px;height:68px;border-radius:18px;display:grid;place-items:center;font-size:32px;font-weight:800;color:#fff;position:relative}
+  .tile.add{background:var(--bar);border:1px solid var(--line);color:var(--muted);font-weight:300;font-size:46px}
+  .fav span{max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hint{margin-top:26px;background:var(--card);border-radius:20px;padding:16px 18px;color:var(--muted);font-size:15px;line-height:1.5}
+  .hint b{color:var(--text)}
+  .legal{color:var(--muted);font-size:13px;line-height:1.5;margin:22px 4px 0}
+  /* téléchargements */
+  .item{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:18px;padding:12px;margin-bottom:10px}
+  .item img{width:84px;height:56px;border-radius:10px;object-fit:cover;background:var(--bar);flex:none}
+  .item .t{min-width:0;flex:1}
+  .item b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item small{color:var(--muted)}
+  .item a{flex:none;background:var(--accent);color:#fff;text-decoration:none;border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px}
+  .empty{color:var(--muted);text-align:center;padding:50px 0}
+  /* barre du bas */
+  nav{position:fixed;left:0;right:0;bottom:0;background:var(--bar);padding:12px 0 max(18px,env(safe-area-inset-bottom));display:flex;justify-content:space-around}
+  nav button{background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;min-width:90px}
+  nav button.on{color:#fff}
+  nav svg{width:28px;height:28px}
+  nav .badge{position:absolute;top:-4px;right:-8px;background:var(--accent);color:#fff;border-radius:10px;font-size:11px;min-width:18px;padding:1px 5px;font-weight:700}
+  /* fenêtre de téléchargement */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:10}
+  .sheet{width:100%;max-width:560px;margin:0 auto;background:var(--card);border-radius:28px 28px 0 0;padding:22px 20px max(26px,env(safe-area-inset-bottom))}
+  .sheet h3{margin:0 0 4px;font-size:20px}
+  .sheet .url{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:14px}
+  .meta{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+  .meta img{width:104px;height:68px;border-radius:12px;object-fit:cover;background:var(--bar)}
+  .meta b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:15px;line-height:1.3}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row button,.row select{flex:1;background:var(--bar);color:var(--text);border:1.5px solid transparent;border-radius:14px;padding:13px 6px;font-size:15px;font-weight:600}
+  .row button.on{border-color:var(--accent);color:var(--accent)}
+  .main{width:100%;background:var(--accent);color:#fff;border:0;border-radius:16px;padding:16px;font-size:17px;font-weight:700}
+  .main:disabled{opacity:.55}
+  .ghost{width:100%;background:none;border:0;color:var(--muted);padding:14px;font-size:15px}
+  .bar{height:5px;border-radius:5px;background:var(--bar);overflow:hidden;margin:12px 0 0;display:none}
+  .bar i{display:block;height:100%;width:40%;background:var(--accent);animation:s 1.1s infinite ease-in-out}
+  @keyframes s{0%{margin-left:-40%}100%{margin-left:100%}}
+  .msg{font-size:15px;line-height:1.45;margin:10px 0 0;word-break:break-word}.msg.err{color:var(--err)}
+  .toast{position:fixed;left:16px;right:16px;bottom:110px;max-width:528px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:none;z-index:5;font-size:15px;line-height:1.4;align-items:center;gap:12px;justify-content:space-between}
+  .toast button{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;flex:none}
+  .addform input{width:100%;background:var(--bar);border:0;border-radius:14px;color:var(--text);font-size:16px;padding:14px;margin-bottom:10px;outline:0}
+</style>
+</head>
+<body>
+<main>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="q" type="text" inputmode="url" enterkeyhint="go" placeholder="Recherchez des vidéos ou collez un lien" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="go">OK</button>
+  </div>
+
+  <section id="v-home">
+    <h2>Favori</h2>
+    <div class="grid" id="grid"></div>
+    <div class="hint"><b>Comment ça marche :</b> touchez un site, trouvez votre vidéo, copiez son lien (Partager → Copier), puis revenez ici. Tiro détecte le lien et propose de le télécharger.</div>
+    <p class="legal">Téléchargez uniquement des vidéos dont vous avez les droits ou dont l'auteur autorise la copie. Gratuit, sans pub.</p>
+  </section>
+
+  <section id="v-dl" style="display:none">
+    <h2>Téléchargements</h2>
+    <div id="list"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"><span id="toast-t"></span><button id="toast-b">Télécharger</button></div>
+
+<nav>
+  <button id="n-home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Accueil</button>
+  <button id="n-dl" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 10v6M9 13.5l3 3 3-3"/></svg>Téléchargements</button>
+</nav>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch { return null; } };
+
+// ---------- favoris ----------
+const DEFAULTS = [
+  { n: "YouTube", u: "https://m.youtube.com", c: "#ff0000", l: "▶" },
+  { n: "Instagram", u: "https://www.instagram.com", c: "linear-gradient(45deg,#fdc468,#df4996,#4f5bd5)", l: "◎" },
+  { n: "Twitter", u: "https://x.com", c: "#000", l: "𝕏" },
+  { n: "TikTok", u: "https://www.tiktok.com", c: "#010101", l: "♪" },
+  { n: "Facebook", u: "https://m.facebook.com", c: "#1877f2", l: "f" },
+  { n: "Tumblr", u: "https://www.tumblr.com", c: "#001935", l: "t" },
+];
+const COLORS = ["#6c5ce7", "#00b894", "#e17055", "#0984e3", "#e84393", "#fdcb6e"];
+function favs() { return store("tiro-favs") || DEFAULTS; }
+
+function renderFavs() {
+  const g = $("grid"); g.innerHTML = "";
+  const add = document.createElement("button"); add.className = "fav";
+  add.innerHTML = '<div class="tile add">+</div><span>Ajouter</span>'; add.onclick = addFav; g.append(add);
+  favs().forEach((f, i) => {
+    const b = document.createElement("button"); b.className = "fav";
+    const t = document.createElement("div"); t.className = "tile"; t.style.background = f.c; t.textContent = f.l;
+    const s = document.createElement("span"); s.textContent = f.n;
+    b.append(t, s);
+    b.onclick = () => openSite(f.u);
+    let timer; // appui long = supprimer
+    b.addEventListener("touchstart", () => { timer = setTimeout(() => { if (confirm("Retirer " + f.n + " des favoris ?")) { const a = favs(); a.splice(i, 1); store("tiro-favs", a); renderFavs(); } }, 650); }, { passive: true });
+    ["touchend", "touchmove"].forEach((e) => b.addEventListener(e, () => clearTimeout(timer), { passive: true }));
+    g.append(b);
+  });
+}
+
+function openSite(u) { waitingForLink = true; window.open(u, "_blank", "noopener"); }
+
+function addFav() {
+  openSheet(`<h3>Ajouter un favori</h3><div class="url">Un site où vous trouvez des vidéos</div>
+    <div class="addform"><input id="fn" placeholder="Nom (ex. Vimeo)"><input id="fu" type="url" inputmode="url" placeholder="https://…" autocapitalize="off"></div>
+    <button class="main" id="fok">Ajouter</button><button class="ghost" id="fcancel">Annuler</button>`);
+  $("fcancel").onclick = closeSheet;
+  $("fok").onclick = () => {
+    let u = $("fu").value.trim(), n = $("fn").value.trim();
+    if (!u) return;
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    try { n = n || new URL(u).hostname.replace(/^www\./, ""); } catch { return; }
+    const a = favs(); a.push({ n, u, c: COLORS[a.length % COLORS.length], l: n[0].toUpperCase() });
+    store("tiro-favs", a); renderFavs(); closeSheet();
+  };
+}
+
+// ---------- recherche / lien ----------
+const isUrl = (s) => /^https?:\/\/\S+$/i.test(s) || /^[\w-]+(\.[\w-]+)+\/\S*$/.test(s);
+function submitQuery() {
+  let v = $("q").value.trim(); if (!v) return;
+  if (isUrl(v)) { if (!/^https?:\/\//i.test(v)) v = "https://" + v; $("q").value = ""; startDownload(v); }
+  else { $("q").value = ""; openSite("https://m.youtube.com/results?search_query=" + encodeURIComponent(v)); }
+}
+$("go").onclick = submitQuery;
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter") submitQuery(); });
+
+// ---------- détection de lien au retour dans l'app ----------
+let waitingForLink = false, lastSeen = store("tiro-last") || "";
+async function checkClipboard() {
+  if (!waitingForLink) return;
+  try {
+    const t = (await navigator.clipboard.readText()).trim();
+    if (/^https?:\/\/\S+$/i.test(t) && t !== lastSeen) {
+      lastSeen = t; store("tiro-last", t); waitingForLink = false;
+      $("toast-t").textContent = "Lien détecté : " + t.replace(/^https?:\/\/(www\.)?/, "").slice(0, 38) + "…";
+      $("toast").style.display = "flex";
+      $("toast-b").onclick = () => { $("toast").style.display = "none"; startDownload(t); };
+      setTimeout(() => ($("toast").style.display = "none"), 12000);
+    }
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkClipboard(); });
+window.addEventListener("focus", checkClipboard);
+
+// ---------- fenêtre de téléchargement ----------
+function openSheet(html) { $("sheet").innerHTML = html; $("scrim").style.display = "flex"; }
+function closeSheet() { $("scrim").style.display = "none"; }
+$("scrim").addEventListener("click", (e) => { if (e.target === $("scrim")) closeSheet(); });
+
+async function api(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "Erreur " + r.status);
+  return j;
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function startDownload(url) {
+  openSheet(`<h3>Analyse du lien…</h3><div class="url">${esc(url)}</div><div class="bar" style="display:block"><i></i></div>`);
+  let d;
+  try { d = await api("/api/analyze", { url }); }
+  catch (e) {
+    openSheet(`<h3>Lien non pris en charge</h3><div class="url">${esc(url)}</div><div class="msg err">${esc(e.message)}</div><button class="ghost" id="x">Fermer</button>`);
+    $("x").onclick = closeSheet; return;
+  }
+  let kind = "mp4";
+  const mins = d.duration ? Math.floor(d.duration / 60) + ":" + String(Math.round(d.duration % 60)).padStart(2, "0") : "";
+  openSheet(`<div class="meta"><img ${d.thumbnail ? 'src="' + esc(d.thumbnail) + '"' : ""} alt=""><div><b>${esc(d.title)}</b><small style="color:var(--muted)">${esc([d.site, mins].filter(Boolean).join(" · "))}</small></div></div>
+    <div class="row"><button id="k1" class="on">Vidéo MP4</button><button id="k2">Audio MP3</button></div>
+    <div class="row" id="qr"><select id="ql"><option value="0">Meilleure qualité</option>${d.heights.map((h) => `<option value="${h}">${h}p</option>`).join("")}</select></div>
+    <button class="main" id="ok">Télécharger</button><div class="bar" id="pb"><i></i></div><div class="msg" id="mg"></div><button class="ghost" id="x">Fermer</button>`);
+  $("x").onclick = closeSheet;
+  $("k1").onclick = () => { kind = "mp4"; $("k1").classList.add("on"); $("k2").classList.remove("on"); $("qr").style.display = "flex"; };
+  $("k2").onclick = () => { kind = "mp3"; $("k2").classList.add("on"); $("k1").classList.remove("on"); $("qr").style.display = "none"; };
+  $("ok").onclick = async () => {
+    $("ok").disabled = true; $("pb").style.display = "block"; $("mg").className = "msg"; $("mg").textContent = "Préparation du fichier…";
+    try {
+      const r = await api("/api/prepare", { url, kind, height: $("ql").value });
+      const list = store("tiro-dl") || [];
+      list.unshift({ title: d.title, thumb: d.thumbnail, kind, link: r.download, at: Date.now() });
+      store("tiro-dl", list.slice(0, 40)); badge();
+      $("mg").textContent = "Terminé ! Le fichier est dans Téléchargements.";
+      const a = document.createElement("a"); a.href = r.download; a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+      $("pb").style.display = "none"; $("ok").disabled = false;
+    } catch (e) { $("mg").className = "msg err"; $("mg").textContent = "Échec : " + e.message; $("pb").style.display = "none"; $("ok").disabled = false; }
+  };
+}
+
+// ---------- téléchargements ----------
+function renderList() {
+  const box = $("list"); box.innerHTML = ""; const l = store("tiro-dl") || [];
+  if (!l.length) { box.innerHTML = '<div class="empty">Aucun téléchargement pour l\'instant.</div>'; return; }
+  for (const it of l) {
+    const exp = Date.now() - it.at > 3600e3;
+    const d = document.createElement("div"); d.className = "item";
+    const im = document.createElement("img"); if (it.thumb) im.src = it.thumb;
+    const t = document.createElement("div"); t.className = "t";
+    const b = document.createElement("b"); b.textContent = it.title;
+    const s = document.createElement("small"); s.textContent = it.kind.toUpperCase() + " · " + new Date(it.at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) + (exp ? " · expiré" : "");
+    t.append(b, s); d.append(im, t);
+    if (!exp) { const a = document.createElement("a"); a.href = it.link; a.textContent = "Ouvrir"; d.append(a); }
+    box.append(d);
+  }
+}
+function badge() { /* compteur discret : rien à afficher pour l'instant */ }
+
+function view(v) {
+  $("v-home").style.display = v === "home" ? "block" : "none";
+  $("v-dl").style.display = v === "dl" ? "block" : "none";
+  $("n-home").classList.toggle("on", v === "home"); $("n-dl").classList.toggle("on", v === "dl");
+  if (v === "dl") renderList();
+}
+$("n-home").onclick = () => view("home");
+$("n-dl").onclick = () => view("dl");
+
+renderFavs();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

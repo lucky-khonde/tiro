@@ -1,0 +1,10 @@
+{
+  "name": "Tiro – Télécharger des vidéos",
+  "short_name": "Tiro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b1b1d",
+  "theme_color": "#1b1b1d",
+  "lang": "fr",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
